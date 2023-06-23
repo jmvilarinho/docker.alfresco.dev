@@ -1,0 +1,6 @@
+<configuration>
+    <source-id>site</source-id>
+    <properties>
+        <root-page>repository</root-page>
+    </properties>
+</configuration>

@@ -1,0 +1,175 @@
+/*
+Acciones sobre las operaciones
+    Acciones.NO_APLICA : no se realiza
+    Acciones.SINCRONA  : en transaccion
+    Acciones.ASINCRONA : modo batch programado
+
+Todas las operaciones por defecto Acciones.NO_APLICA
+
+Validacion:
+setValidarAccion(Acciones validarAccion)
+setValidarFormato(String validarFormato)
+
+Transformacion:
+setTransformarAccion(Acciones transformarAccion)
+setTransformarFormato(String transformarFormato)
+
+Acciones de Firma y Firma Longeva sobre original:
+setCustodiaSobreOriginal(boolean custodiaSobreOriginal)
+Acciones de Firma y Firma Longeva sobre transformado (si existe)
+setCustodiaSobreTransformado(boolean custodiaSobreTransformado)
+
+Firma:
+setFirmarAccion(Acciones firmarAccion)
+setFirmarFormato(String firmarFormato)
+
+Firma Longeva:
+setFirmaLongevaAccion(Acciones firmaLongevaAccion)
+setFirmaLongevaFormato(String firmaLongevaFormato)
+
+*******************************
+
+nodo: objecto nodo ECM
+
+Consultas de informacion sobre nodo ECM
+String getTipo(NodoECM<T> id)
+String getMimetype(NodoECM<NodeRef> id)
+long getSize(NodoECM<NodeRef> id)
+String getPropertyValue(NodoECM<T> id, String propertyName)
+
+*/
+package com.queres.xedoc.custodia.modulo.reglas
+
+import java.lang.String;
+import java.lang.Integer;
+import com.queres.xedoc.custodia.module.dao.Acciones;
+
+
+rule "bulk_upload_xedoc_ws"
+when
+    data: DataToDrools(
+    	operacionesNodo.getTipo(nodo) == "{xedoc}docBase",
+    	operacionesNodo.getPropertyValue(nodo,"{xedoc}cliente") == "XEPYR",
+    	operacionesNodo.getPropertyValue(nodo,"{xedoc}tipoDocumental") == "TD14"
+    )
+then
+    data.setCustodiaSobreOriginal(true);
+    data.setFirmaLongevaAccion(Acciones.ASINCRONA);
+    data.setFirmaLongevaFormato("XAdES_INTERNALY_DETACHED");
+end
+
+rule "Lucus Augusti - Firma longeva sincrona"
+when
+    data: DataToDrools(
+    	operacionesNodo.getTipo(nodo) == "{hc}docExt",
+    	operacionesNodo.getPropertyValue(nodo,"{hc}codCentro") == "270018",
+    	operacionesNodo.getPropertyValue(nodo,"{hc}appOrixe") == "SEGESDOC",
+    	operacionesNodo.getPropertyValue(nodo,"{hc}contentType") == "application/pdf",
+    	(operacionesNodo.getPropertyValue(nodo,"{hc}codDocEx") == "29" || operacionesNodo.getPropertyValue(nodo,"{hc}codDocEx") == "15")
+    )
+then
+    data.setCustodiaSobreOriginal(true);
+    data.setFirmaLongevaAccion(Acciones.SINCRONA);
+    data.setFirmaLongevaFormato("XAdES_INTERNALY_DETACHED");
+end
+
+rule "TestCase 26"
+when
+    data: DataToDrools(
+    	operacionesNodo.getTipo(nodo) == "{hc}docExt",
+    	operacionesNodo.getMimetype(nodo) == "application/msword",
+    	operacionesNodo.getPropertyValue(nodo,"{hc}appOrixe") == "SEGESDOC",
+    	operacionesNodo.getPropertyValue(nodo,"{hc}nombreFichero") == "xxxTestCasexxx.doc"
+    )
+then
+    data.setCustodiaSobreOriginal(true);
+    data.setFirmaLongevaAccion(Acciones.SINCRONA);
+    data.setFirmaLongevaFormato("XAdES_INTERNALY_DETACHED");
+end
+
+rule "TestCase 22"
+when
+    data: DataToDrools( operacionesNodo.getTipo(nodo) == "{hc}docExt"
+&& operacionesNodo.getMimetype(nodo) == "image/jpeg"
+&& operacionesNodo.getPropertyValue(nodo,"{hc}appOrixe") == "SEGESDOC"
+&& operacionesNodo.getPropertyValue(nodo,"{hc}nombreFichero") == "xxxTestCasexxx.jpg")
+then
+    data.setCustodiaSobreOriginal(true);
+    data.setFirmarAccion(Acciones.SINCRONA);
+    data.setFirmarFormato("XAdES_DETACHED");
+end
+
+rule "TestCase 13"
+when
+    data: DataToDrools( operacionesNodo.getTipo(nodo) == "{hc}docExt"
+&& operacionesNodo.getMimetype(nodo) == "application/vnd.ms-powerpoint"
+&& operacionesNodo.getPropertyValue(nodo,"{hc}appOrixe") == "SEGESDOC"
+&& operacionesNodo.getPropertyValue(nodo,"{hc}nombreFichero") == "xxxTestCasexxx.ppt")
+then
+    data.setCustodiaSobreOriginal(true);
+    data.setFirmarAccion(Acciones.ASINCRONA);
+    data.setFirmarFormato("XAdES_DETACHED");
+end
+
+rule "TestCase 30"
+when
+    data: DataToDrools( operacionesNodo.getTipo(nodo) == "{hc}docExt" && operacionesNodo.getMimetype(nodo) == "application/pdf" && operacionesNodo.getPropertyValue(nodo,"{hc}appOrixe") == "SEGESDOC")
+then
+    data.setCustodiaSobreOriginal(true);
+    data.setFirmaLongevaAccion(Acciones.ASINCRONA);
+    data.setFirmaLongevaFormato("XAdES_INTERNALY_DETACHED");
+end
+
+rule "TestCase 40"
+when
+    data: DataToDrools( operacionesNodo.getTipo(nodo) == "{hc}docExt"
+&& operacionesNodo.getMimetype(nodo) == "image/png"
+&& operacionesNodo.getPropertyValue(nodo,"{hc}appOrixe") == "SEGESDOC"
+&& operacionesNodo.getPropertyValue(nodo,"{hc}nombreFichero") == "xxxTestCasexxx.png")
+then
+    data.setTransformarAccion(Acciones.SINCRONA);
+    data.setTransformarFormato("PDF");
+    data.setCustodiaSobreOriginal(true);
+    data.setCustodiaSobreTransformado(true);
+end
+
+rule "COSTA - IANUS - Firma longeva asincrona"
+when
+    data: DataToDrools(
+    	operacionesNodo.getTipo(nodo) == "{hc}docExt",
+    	operacionesNodo.getPropertyValue(nodo,"{hc}codCentro") == "270095",
+    	operacionesNodo.getPropertyValue(nodo,"{hc}appOrixe") == "IANUS",
+    	operacionesNodo.getPropertyValue(nodo,"{hc}contentType") == "application/pdf",
+    	(operacionesNodo.getPropertyValue(nodo,"{hc}codDocEx") == "29" || operacionesNodo.getPropertyValue(nodo,"{hc}codDocEx") == "15")
+    )
+then
+    data.setCustodiaSobreOriginal(true);
+    data.setFirmaLongevaAccion(Acciones.ASINCRONA);
+    data.setFirmaLongevaFormato("XAdES_INTERNALY_DETACHED");
+end
+
+rule "COSTA - XEDOC_IDX - Firma longeva asincrona"
+when
+    data: DataToDrools(
+    	operacionesNodo.getTipo(nodo) == "{hc}docExt",
+    	operacionesNodo.getPropertyValue(nodo,"{hc}codCentro") == "270095",
+    	operacionesNodo.getPropertyValue(nodo,"{hc}appOrixe") == "XEDOC_IDX",
+    	operacionesNodo.getPropertyValue(nodo,"{hc}contentType") == "application/pdf",
+    	(operacionesNodo.getPropertyValue(nodo,"{hc}codDocEx") == "29" || operacionesNodo.getPropertyValue(nodo,"{hc}codDocEx") == "15")
+    )
+then
+    data.setCustodiaSobreOriginal(true);
+    data.setFirmaLongevaAccion(Acciones.ASINCRONA);
+    data.setFirmaLongevaFormato("XAdES_INTERNALY_DETACHED");
+end
+
+
+rule "Migracion Tamino CHP - PDF"
+when
+    data: DataToDrools( operacionesNodo.getTipo(nodo) == "{hc}docExt" && operacionesNodo.getPropertyValue(nodo,"{http://www.queres.com/model/xedoc/batch/1.0}sistemaOrigenID") == "TM-360340-DEV")
+then
+    data.setCustodiaSobreOriginal(true);
+    data.setFirmaLongevaAccion(Acciones.SINCRONA);
+    data.setFirmaLongevaFormato("XAdES_INTERNALY_DETACHED");
+end
+

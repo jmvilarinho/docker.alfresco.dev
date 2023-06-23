@@ -1,0 +1,10 @@
+#
+# Afresco
+#
+
+#
+FROM 321006660882.dkr.ecr.eu-west-1.amazonaws.com/queres/alfresco-5.1.3.2:1.0
+MAINTAINER Queres info@queres.com
+
+ADD tomcat-shared-classes.zip /tmp/
+RUN unzip -d $CATALINA_HOME/shared/classes /tmp/tomcat-shared-classes.zip

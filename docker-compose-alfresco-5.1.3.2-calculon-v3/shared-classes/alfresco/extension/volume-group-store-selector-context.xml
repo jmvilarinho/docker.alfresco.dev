@@ -1,0 +1,268 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE beans PUBLIC '-//SPRING//DTD BEAN//EN' 'http://www.springframework.org/dtd/spring-beans.dtd'>
+<beans>
+
+<!-- Stores para el Volume Group Store Selector -->
+<!--
+		Deben existir los puntos de montaje "debajo" de 'constructor-arg'
+
+		Por ejemplo, para /mnt/alfresco1/compartido/chus:
+			/mnt/alfresco1/compartido/chus/store0000
+			/mnt/alfresco1/compartido/chus/store0001
+			/mnt/alfresco1/compartido/chus/store0002
+			/mnt/alfresco1/compartido/chus/store0003
+-->
+
+    <bean id="volumeGroupSelectorBase"  abstract="true" class="com.queres.alfresco.vgss.repo.content.filestore.VolumeGroupSelectorImpl">
+        <property name="volumeNameDAO" ref="volumeNameDAO"/>
+        <!-- Espacio libre (en bytes) antes de seleccionar el siguiente volumen -->
+        <property name="freeSpaceThreshold">
+            <value>10485760</value>
+        </property>
+        <!-- Espacio libre (en porcentaje) antes de seleccionar el siguiente volumen
+             si se establece tiene preferencia sobre freeSpaceThreshold -->
+        <!--
+        <property name="rateFreeSpaceThreshold">
+        	<value>15</value>
+        </property>
+       	-->
+        <!-- Expresion regular para leer los volumenes del disco donde en la segunda
+        	   posicion ha de númerica, por ejemplo (sin comillas):
+
+        	   "(store)(\d{4})" store0000
+        	                     store0001
+        	                     store0002
+
+                   "(almacenamiento)(\\d{6})" almacenamiento000000
+                                              almacenamiento000001
+                                              almacenamiento000002
+                                              almacenamiento000003
+        -->
+        <property name="storeNamePattern">
+            <value>(volumen)(\d{8})</value>
+        </property>
+        <property name="haltOnError">
+            <value>${vgss.haltOnError}</value>
+        </property>
+    </bean>
+    <bean id="volumeGroupContentStoreBase" abstract="true" class="com.queres.alfresco.vgss.repo.content.filestore.VolumeGroupContentStore">
+    </bean>
+
+    <bean id="selector_sscc" parent="volumeGroupSelectorBase">
+        <property name="rateFreeSpaceThreshold">
+            <value>2</value>
+        </property>
+    </bean>
+    <bean id="store_sscc" parent="volumeGroupContentStoreBase">
+        <constructor-arg>
+            <value>/mnt/alfresco1/compartido/sscc</value>
+        </constructor-arg>
+        <property name="volumeGroupSelector">
+            <ref bean="selector_sscc" />
+        </property>
+        <property name="propertyValue">
+            <value>sscc</value>
+        </property>
+    </bean>
+
+    <bean id="selector_eoxi_santiago" parent="volumeGroupSelectorBase">
+        <property name="rateFreeSpaceThreshold">
+            <value>3</value>
+        </property>
+    </bean>
+    <bean id="store_eoxi_santiago" parent="volumeGroupContentStoreBase">
+        <constructor-arg>
+            <value>/mnt/alfresco1/compartido/eoxi_santiago</value>
+        </constructor-arg>
+        <property name="volumeGroupSelector">
+            <ref bean="selector_eoxi_santiago" />
+        </property>
+        <property name="propertyValue">
+            <list>
+                <value>1571</value>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="selector_hula" parent="volumeGroupSelectorBase">
+        <property name="rateFreeSpaceThreshold">
+            <value>3</value>
+        </property>
+    </bean>
+    <bean id="store_hula" parent="volumeGroupContentStoreBase">
+        <constructor-arg>
+            <value>/mnt/alfresco1/compartido/hula</value>
+        </constructor-arg>
+        <property name="volumeGroupSelector">
+            <ref bean="selector_hula" />
+        </property>
+        <property name="propertyValue">
+            <list>
+                <value>270018</value>
+                <value>PRIMARIA</value>
+                <value>270095</value>
+                <value>270109</value>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="selector_chus" parent="volumeGroupSelectorBase">
+        <property name="rateFreeSpaceThreshold">
+            <value>3</value>
+        </property>
+    </bean>
+    <bean id="store_chus" parent="volumeGroupContentStoreBase">
+        <constructor-arg>
+            <value>/mnt/alfresco1/compartido/chus</value>
+        </constructor-arg>
+        <property name="volumeGroupSelector">
+            <ref bean="selector_chus" />
+        </property>
+        <property name="propertyValue">
+            <list>
+                <value>Almacen Chus</value>
+                <value>150200</value>
+                <value>150336</value>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="selector_our" parent="volumeGroupSelectorBase">
+        <property name="rateFreeSpaceThreshold">
+            <value>2</value>
+        </property>
+    </bean>
+    <bean id="store_our" parent="volumeGroupContentStoreBase">
+        <constructor-arg>
+            <value>/mnt/alfresco1/compartido/our</value>
+        </constructor-arg>
+        <property name="volumeGroupSelector">
+            <ref bean="selector_our" />
+        </property>
+        <property name="propertyValue">
+            <list>
+                <value>320150</value>
+                <value>320126</value>
+                <value>320013</value>
+            </list>
+        </property>
+    </bean>
+
+    <!-- Store Selector -->
+    <bean id="propertyContentStoreSelector" class="com.queres.alfresco.vgss.PropertyContentStoreSelectorImpl">
+        <property name="propertyQName">
+            <value>{almacen}almacen</value>
+        </property>
+        <property name="nodeService">
+            <ref bean="nodeService" />
+        </property>
+        <property name="storeSelectorAspectContentStore">
+            <ref bean="storeSelectorContentStore"/>
+        </property>
+        <!-- store por defecto si al obtener el valor de 'propertyQName' no coincide con el nombre los stores -->
+        <property name="defaultStoreName">
+            <value>sscc</value>
+        </property>
+        <!--
+        Lista de typos de datos que se ignora la busqueda de almacen para delegarla en el espacio padre segun
+        el valor de la propiedad definida en propertyQName
+        -->
+        <property name="parentSelectorConfigBean">
+            <bean class="com.queres.alfresco.vgss.config.ParentSelectorConfigBean">
+                <property name="propertyQName">
+                    <value>{xedoc_idx_services}almacen</value>
+                </property>
+                <property name="noSelectorTypes">
+                    <list>
+                        <value>{http://www.alfresco.org/model/content/1.0}content</value>
+                    </list>
+                </property>
+            </bean>
+        </property>
+        <!--
+        Lista de typos de datos que se ignora la busqueda de almacen
+        -->
+        <!--property name="ignoreTypes">
+            <list>
+                <value>{http://www.alfresco.org/model/content/1.0}thumbnail</value>
+                <value>{http://www.alfresco.org/model/content/1.0}failedThumbnail</value>
+            </list>
+        </property-->
+    </bean>
+
+
+    <bean id="storeSelectorContentStore" parent="storeSelectorContentStoreBase">
+        <property name="defaultStoreName">
+            <value>default</value>
+        </property>
+        <property name="storesByName">
+            <map>
+                <entry key="default">
+                    <ref bean="fileContentStore" />
+                </entry>
+                <entry key="sscc">
+                    <ref bean="store_sscc" />
+                </entry>
+                <entry key="eoxi_santiago">
+                    <ref bean="store_eoxi_santiago" />
+                </entry>
+                <entry key="hula">
+                    <ref bean="store_hula" />
+                </entry>
+                <entry key="chus">
+                    <ref bean="store_chus" />
+                </entry>
+                <entry key="our">
+                    <ref bean="store_our" />
+                </entry>
+            </map>
+        </property>
+    </bean>
+
+    <bean id="fileContentStore" class="org.alfresco.repo.content.filestore.FileContentStore">
+        <constructor-arg>
+            <value>${dir.contentstore}</value>
+        </constructor-arg>
+    </bean>
+
+    <!-- Point the ContentService to the 'selector' store -->
+    <bean id="contentService" parent="baseContentService">
+        <property name="store">
+            <ref bean="storeSelectorContentStore" />
+        </property>
+    </bean>
+
+    <!-- Add the other stores to the list of stores for cleaning -->
+    <bean id="eagerContentStoreCleaner" class="org.alfresco.repo.content.cleanup.EagerContentStoreCleaner" init-method="init">
+        <property name="eagerOrphanCleanup" >
+            <value>${system.content.eagerOrphanCleanup}</value>
+        </property>
+        <property name="stores" >
+            <list>
+                <ref bean="fileContentStore" />
+                <ref bean="store_sscc" />
+                <ref bean="store_eoxi_santiago" />
+                <ref bean="store_hula" />
+                <ref bean="store_chus" />
+                <ref bean="store_our" />
+            </list>
+        </property>
+        <property name="listeners" >
+            <ref bean="deletedContentBackupListeners" />
+        </property>
+    </bean>   
+    <!-- Actualización del gestor de almacenamientoe, se migra la propiedad almacen -->
+    <bean id="reapplyVolumeGroupStoreSelector" parent="reapplyVolumeGroupStoreSelectorBase">
+        <property name="doAllVersionable">
+            <value>true</value>
+        </property>
+        <property name="updateOldAlmacenProperty">
+            <value>true</value>
+        </property>
+        <property name="vgssPropertySet">
+            <ref bean="store_eoxi_santiago" />
+        </property>
+    </bean>
+
+</beans>
+

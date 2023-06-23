@@ -1,0 +1,21 @@
+--- swftools-2013-04-09-1007/lib/jpeg.c	2011-10-15 04:46:10.000000000 +0800
++++ swftools-2013-04-09-1007-new/lib/jpeg.c	2014-05-26 18:09:47.184459488 +0800
+@@ -4,10 +4,18 @@
+ #include "jpeg.h"
+ #include "../config.h"
+ 
++
+ #ifdef HAVE_JPEGLIB
++#ifndef FALSE            /* in case these macros already exist */
++#define FALSE   0        /* values of boolean */
++#endif
++#ifndef TRUE
++#define TRUE    1
++#endif
+ #define HAVE_BOOLEAN
+ #include <jpeglib.h>
+ 
++
+ #define OUTBUFFER_SIZE 0x8000
+ 
+ static FILE*fi;
